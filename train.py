@@ -235,11 +235,13 @@ def train_kd(model, teacher_outputs, optimizer, loss_fn_kd, dataloader, metrics,
                 # compute all metrics on this batch
                 summary_batch = {metric:metrics[metric](output_batch, labels_batch)
                                  for metric in metrics}
-                summary_batch['loss'] = loss.data[0]
+                # summary_batch['loss'] = loss.data[0]
+                summary_batch['loss'] = loss.data.item()
                 summ.append(summary_batch)
 
             # update the average loss
-            loss_avg.update(loss.data[0])
+            # loss_avg.update(loss.data[0])
+            loss_avg.update(loss.data.item())
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
@@ -401,7 +403,7 @@ if __name__ == '__main__':
         """
         if params.teacher == "resnet18":
             teacher_model = resnet.ResNet18()
-            teacher_checkpoint = 'experiments/base_resnet18/best.pth.tar'
+            teacher_checkpoint = 'experiments/pretrained_teacher_models/base_resnet18/best.pth.tar'
             teacher_model = teacher_model.cuda() if params.cuda else teacher_model
 
         elif params.teacher == "wrn":
