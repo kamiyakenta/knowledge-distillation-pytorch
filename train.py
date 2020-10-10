@@ -235,13 +235,13 @@ def train_kd(model, teacher_outputs, optimizer, loss_fn_kd, dataloader, metrics,
                 # compute all metrics on this batch
                 summary_batch = {metric:metrics[metric](output_batch, labels_batch)
                                  for metric in metrics}
-                # summary_batch['loss'] = loss.data[0]
-                summary_batch['loss'] = loss.data.item()
+                summary_batch['loss'] = loss.data[0]
+                # summary_batch['loss'] = loss.data.item()
                 summ.append(summary_batch)
 
             # update the average loss
-            # loss_avg.update(loss.data[0])
-            loss_avg.update(loss.data.item())
+            loss_avg.update(loss.data[0])
+            # loss_avg.update(loss.data.item())
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
@@ -292,7 +292,7 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
         scheduler.step()
 
         # Run one epoch
-        logging.info("Epoch {}/{}".format(epoch + 1, params.num_epochs))
+        logging.info("KD:Epoch {}/{}".format(epoch + 1, params.num_epochs))
 
         # compute number of batches in one epoch (one full pass over the training set)
         train_kd(model, teacher_outputs, optimizer, loss_fn_kd, train_dataloader,
@@ -342,6 +342,8 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
 
 
 if __name__ == '__main__':
+
+    start = time.time()
 
     # Load the parameters from json file
     args = parser.parse_args()
@@ -466,3 +468,7 @@ if __name__ == '__main__':
         logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
         train_and_evaluate(model, train_dl, dev_dl, optimizer, loss_fn, metrics, params,
                            args.model_dir, args.restore_file)
+    
+    end_time = time.time() - start
+    print("~~~~~~~~~end_time~~~~~~~~~")
+    print(str(end_time) + "[sec]")
