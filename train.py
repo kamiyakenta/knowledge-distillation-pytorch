@@ -405,7 +405,7 @@ if __name__ == '__main__':
         """
         if params.teacher == "resnet18":
             teacher_model = resnet.ResNet18()
-            teacher_checkpoint = 'experiments/pretrained_teacher_models/base_resnet18/best.pth.tar'
+            teacher_checkpoint = 'experiments/base_resnet18/best.pth.tar'
             teacher_model = teacher_model.cuda() if params.cuda else teacher_model
 
         elif params.teacher == "wrn":
