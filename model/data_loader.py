@@ -16,39 +16,32 @@ def fetch_dataloader(types, params):
     """
     Fetch and return train/dev dataloader with hyperparameters (params.subset_percent = 1.)
     """
-
-    # using random crops and horizontal flip for train set
-    if params.augmentation == "yes":
-        train_transformer = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
-
-    # data augmentation can be turned off
-    else:
-        train_transformer = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
-
-    # transformer for dev set
-    dev_transformer = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
-
-    trainset = torchvision.datasets.CIFAR10(root='./data-cifar10', train=True,
-        download=True, transform=train_transformer) #50000
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=params.batch_size,
-        shuffle=True, num_workers=params.num_workers, pin_memory=params.cuda)
-
-    devset = torchvision.datasets.CIFAR10(root='./data-cifar10', train=False,
-        download=True, transform=dev_transformer) #10000
-    devloader = torch.utils.data.DataLoader(devset, batch_size=params.batch_size,
-        shuffle=False, num_workers=params.num_workers, pin_memory=params.cuda)
-
     if types == 'train':
+        if params.augmentation == "yes":
+            train_transformer = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),  # randomly flip image horizontally
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
+
+        # data augmentation can be turned off
+        else:
+            train_transformer = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
+        trainset = torchvision.datasets.CIFAR10(root='./data-cifar10', train=True,
+            download=True, transform=train_transformer) #50000
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=params.batch_size,
+        shuffle=True, num_workers=params.num_workers, pin_memory=params.cuda)
         dl = trainloader
     else:
+        dev_transformer = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
+        devset = torchvision.datasets.CIFAR10(root='./data-cifar10', train=False,
+            download=True, transform=dev_transformer) #10000
+        devloader = torch.utils.data.DataLoader(devset, batch_size=params.batch_size,
+        shuffle=False, num_workers=params.num_workers, pin_memory=params.cuda)
         dl = devloader
 
     return dl

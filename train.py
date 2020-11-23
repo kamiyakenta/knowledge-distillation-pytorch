@@ -1,28 +1,30 @@
 """Main entrance for train/eval with/without KD on CIFAR-10"""
 
 import argparse
+import datetime
 import logging
-import os
-import time
 import math
+import os
 import random
+import time
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
 from torch.autograd import Variable
+from torch.optim.lr_scheduler import StepLR
 from tqdm import tqdm
 
-import utils
-import model.net as net
 import model.data_loader as data_loader
-import model.resnet as resnet
-import model.wrn as wrn
 import model.densenet as densenet
-import model.resnext as resnext
+import model.net as net
 import model.preresnet as preresnet
+import model.resnet as resnet
+import model.resnext as resnext
+import model.wrn as wrn
+import utils
 from evaluate import evaluate, evaluate_kd
 
 parser = argparse.ArgumentParser()
@@ -32,7 +34,7 @@ parser.add_argument('--model_dir', default='experiments/base_model',
 parser.add_argument('--restore_file', default=None,
                     help="Optional, name of the file in --model_dir \
                     containing weights to reload before training")  # 'best' or 'train'
-
+parser.add_argument('--cpu', action='store_true')
 
 def train(model, optimizer, loss_fn, dataloader, metrics, params):
     """Train the model on `num_steps` batches
@@ -263,10 +265,12 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
         restore_file: (string) - file to restore (without its extension .pth.tar)
     """
     # reload weights from restore_file if specified
+    restore_start = time.time()
     if restore_file is not None:
         restore_path = os.path.join(args.model_dir, args.restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}".format(restore_path))
         utils.load_checkpoint(restore_path, model, optimizer)
+    logging.info("restore_load_time: {}".format(time.time() - restore_start))
 
     best_val_acc = 0.0
     
@@ -287,6 +291,7 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
     elif params.model_version == "cnn_distill": 
         scheduler = StepLR(optimizer, step_size=100, gamma=0.2) 
 
+    train_start = time.time()
     for epoch in range(params.num_epochs):
 
         scheduler.step()
@@ -339,6 +344,7 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
         #     tag = tag.replace('.', '/')
         #     board_logger.histo_summary(tag, value.data.cpu().numpy(), epoch+1)
         #     # board_logger.histo_summary(tag+'/grad', value.grad.data.cpu().numpy(), epoch+1)
+    logging.info("train: {}".format(time.time()-train_start))
 
 
 if __name__ == '__main__':
@@ -353,6 +359,9 @@ if __name__ == '__main__':
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
+
+    if args.cpu:
+        params.cuda = False
 
     # Set the random seed for reproducible experiments
     random.seed(230)
@@ -380,7 +389,7 @@ if __name__ == '__main__':
        nn.DataParallel module to correctly load the model parameters
     """
     if "distill" in params.model_version:
-
+        student_model_load_start = time.time()
         # train a 5-layer CNN or a 18-layer ResNet with knowledge distillation
         if params.model_version == "cnn_distill":
             model = net.Net(params).cuda() if params.cuda else net.Net(params)
@@ -396,6 +405,9 @@ if __name__ == '__main__':
             # fetch loss function and metrics definition in model files
             loss_fn_kd = net.loss_fn_kd
             metrics = resnet.metrics
+        
+        student_model_load_time = time.time() - student_model_load_start
+        logging.info("student_model_load_time: {}".format(student_model_load_time))
 
         """ 
             Specify the pre-trained teacher models for knowledge distillation
@@ -403,6 +415,7 @@ if __name__ == '__main__':
             therefore need to call "nn.DaraParallel" to correctly load the model weights
             Trying to run on CPU will then trigger errors (too time-consuming anyway)!
         """
+        teacher_model_load_start = time.time()
         if params.teacher == "resnet18":
             teacher_model = resnet.ResNet18()
             teacher_checkpoint = 'experiments/base_resnet18/best.pth.tar'
@@ -430,6 +443,8 @@ if __name__ == '__main__':
             teacher_model = nn.DataParallel(teacher_model).cuda()
 
         utils.load_checkpoint(teacher_checkpoint, teacher_model)
+        teacher_model_load_time = time.time() - teacher_model_load_start
+        logging.info("teacher_model_load_time: {}".format(teacher_model_load_time))
 
         # Train the model with KD
         logging.info("Experiment - model version: {}".format(params.model_version))
@@ -470,5 +485,5 @@ if __name__ == '__main__':
                            args.model_dir, args.restore_file)
     
     end_time = time.time() - start
-    print("~~~~~~~~~end_time~~~~~~~~~")
-    print(str(end_time) + "[sec]")
+    logging.info("~~~~~~~~~全体時間~~~~~~~~~")
+    logging.info(str(end_time) + "[sec]")
