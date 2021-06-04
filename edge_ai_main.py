@@ -1,4 +1,8 @@
-"""Main entrance for train/eval with/without KD on CIFAR-10"""
+"""
+Main entrance for train/eval with/without KD on CIFAR-10
+e.g.
+python3 edge_ai_main.py --model_dir experiments/edge_ai_*
+"""
 
 import argparse
 import logging
@@ -343,7 +347,7 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
         #     tag = tag.replace('.', '/')
         #     board_logger.histo_summary(tag, value.data.cpu().numpy(), epoch+1)
         #     # board_logger.histo_summary(tag+'/grad', value.grad.data.cpu().numpy(), epoch+1)
-    logging.info("train: {}".format(time.time()-train_start))
+    logging.info("train: {}[sec]".format(time.time()-train_start))
 
 
 if __name__ == '__main__':
@@ -440,6 +444,11 @@ if __name__ == '__main__':
             teacher_model = preresnet.PreResNet(depth=110, num_classes=10)
             teacher_checkpoint = 'experiments/base_preresnet110/best.pth.tar'
             teacher_model = nn.DataParallel(teacher_model).cuda()
+        
+        else:
+            teacher_model = resnet.ResNet18()
+            teacher_checkpoint = f'experiments/{params.teacher}/best.pth.tar'
+            teacher_model = teacher_model.cuda() if params.cuda else teacher_model
 
         utils.load_checkpoint(teacher_checkpoint, teacher_model)
         teacher_model_load_time = time.time() - teacher_model_load_start

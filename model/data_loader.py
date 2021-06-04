@@ -2,15 +2,14 @@
    CIFAR-10 data normalization reference:
    https://github.com/Armour/pytorch-nn-practice/blob/master/utils/meanstd.py
 """
-
-import random
-import os
 import numpy as np
-from PIL import Image
 import torch
 import torchvision
 import torchvision.transforms as transforms
+from torch.utils.data import ConcatDataset
+from torch.utils.data.dataset import random_split
 from torch.utils.data.sampler import SubsetRandomSampler
+
 
 def fetch_dataloader(types, params):
     """
@@ -31,7 +30,17 @@ def fetch_dataloader(types, params):
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))])
         trainset = torchvision.datasets.CIFAR10(root='./data-cifar10', train=True,
             download=True, transform=train_transformer) #50000
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=params.batch_size,
+
+        if 'train_size' in params.dict:
+            if ('collection_size' in params.dict) and ('day' in params.dict):
+                _, new_trainset = __KD_data_split(
+                    trainset, params.train_size, params.collection_size, params.day)
+            else:
+                new_trainset, _ = __data_split(trainset, params.train_size)
+        else:
+            new_trainset = trainset
+
+        trainloader = torch.utils.data.DataLoader(new_trainset, batch_size=params.batch_size,
         shuffle=True, num_workers=params.num_workers, pin_memory=params.cuda)
         dl = trainloader
     else:
@@ -97,3 +106,17 @@ def fetch_subset_dataloader(types, params):
         dl = devloader
 
     return dl
+
+def __data_split(dataset, main_size):
+    torch.manual_seed(0)
+    return tuple(random_split(dataset, [main_size, len(dataset) - main_size]))
+
+def __KD_data_split(dataset, main_size, collection_size, day):
+    torch.manual_seed(0)
+    base_dataset, remain_dataset = random_split(dataset, [main_size, len(dataset) - main_size])
+    collections = []
+    for i in range(1, day+1):
+        day_collection, remain_dataset = random_split(
+            remain_dataset, [collection_size, len(remain_dataset) - collection_size])
+        collections.append(day_collection)
+    return base_dataset, ConcatDataset(collections)
