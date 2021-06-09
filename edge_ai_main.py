@@ -291,8 +291,10 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
     if params.model_version == "resnet18_distill":
         scheduler = StepLR(optimizer, step_size=150, gamma=0.1)
     # for cnn models, num_epoch is always < 100, so it's intentionally not using scheduler here
-    elif params.model_version == "cnn_distill": 
-        scheduler = StepLR(optimizer, step_size=100, gamma=0.2) 
+    elif params.model_version == "cnn_distill":
+        scheduler = StepLR(optimizer, step_size=100, gamma=0.2)
+    else:
+        scheduler = StepLR(optimizer, step_size=100, gamma=0.2)
 
     train_start = time.time()
     for epoch in range(params.num_epochs):
@@ -392,7 +394,6 @@ if __name__ == '__main__':
        nn.DataParallel module to correctly load the model parameters
     """
     if "distill" in params.model_version:
-        student_model_load_start = time.time()
         # train a 5-layer CNN or a 18-layer ResNet with knowledge distillation
         if params.model_version == "cnn_distill":
             model = net.Net(params).cuda() if params.cuda else net.Net(params)
@@ -408,9 +409,15 @@ if __name__ == '__main__':
             # fetch loss function and metrics definition in model files
             loss_fn_kd = net.loss_fn_kd
             metrics = resnet.metrics
-        
-        student_model_load_time = time.time() - student_model_load_start
-        logging.info("student_model_load_time: {}".format(student_model_load_time))
+
+        else:
+            model = net.Net(params).cuda() if params.cuda else net.Net(params)
+            optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
+            loss_fn_kd = net.loss_fn_kd
+            metrics = net.metrics
+            student_name = params.model_version.replace('_cnn_distill', '')
+            student_checkpoint = f'experiments/{student_name}/best.pth.tar'
+            utils.load_checkpoint(student_checkpoint, model)
 
         """ 
             Specify the pre-trained teacher models for knowledge distillation
