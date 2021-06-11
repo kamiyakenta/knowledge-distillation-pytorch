@@ -1,7 +1,7 @@
 """
 Main entrance for train/eval with/without KD on CIFAR-10
 e.g.
-python3 edge_ai_main.py --model_dir experiments/edge_ai_*
+python3 edge_ai_main.py --cpu --model_dir experiments/edge_ai_*
 """
 
 import argparse
