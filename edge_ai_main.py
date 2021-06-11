@@ -273,7 +273,7 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
         restore_path = os.path.join(args.model_dir, args.restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}".format(restore_path))
         utils.load_checkpoint(restore_path, model, optimizer)
-    logging.info("restore_load_time: {}".format(time.time() - restore_start))
+        logging.info("restore_load_time: {}".format(time.time() - restore_start))
 
     best_val_acc = 0.0
     
