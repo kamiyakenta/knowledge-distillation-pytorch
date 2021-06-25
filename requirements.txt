@@ -1,9 +1,10 @@
-scipy==1.0.0
-numpy==1.14.0
+scipy==1.2.0
 Pillow==5.0.0
 tabulate==0.8.2
-tensorflow==1.7.0rc0
-torch==0.3.1
+tensorflow==1.13.1
+numpy==1.17.0
+torch-0.3.1b0+cee25bc-cp37-cp37m-linux_armv7l.whl 
 torchvision==0.2.0
 tqdm==4.19.8
 torchnet
+h5py==2.10.0
