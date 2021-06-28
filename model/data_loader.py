@@ -33,8 +33,10 @@ def fetch_dataloader(types, params):
 
         if 'train_size' in params.dict:
             if ('collection_size' in params.dict) and ('day' in params.dict):
-                _, new_trainset = __KD_data_split(
+                base_dataset, new_trainset = __KD_data_split(
                     trainset, params.train_size, params.collection_size, params.day)
+                print(f"base_dataset: {len(base_dataset)}")
+                print(f"day_dataset: {len(new_trainset)}")
             else:
                 new_trainset, _ = __data_split(trainset, params.train_size)
         else:
@@ -113,10 +115,9 @@ def __data_split(dataset, main_size):
 
 def __KD_data_split(dataset, main_size, collection_size, day):
     torch.manual_seed(0)
-    base_dataset, remain_dataset = random_split(dataset, [main_size, len(dataset) - main_size])
+    base_dataset, remain_dataset = __data_split(dataset, main_size)
     collections = []
     for i in range(1, day+1):
-        day_collection, remain_dataset = random_split(
-            remain_dataset, [collection_size, len(remain_dataset) - collection_size])
+        day_collection, remain_dataset = __data_split(remain_dataset, collection_size)
         collections.append(day_collection)
     return base_dataset, ConcatDataset(collections)
