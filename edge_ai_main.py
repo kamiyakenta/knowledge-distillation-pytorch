@@ -457,8 +457,8 @@ if __name__ == '__main__':
             teacher_checkpoint = f'experiments/{params.teacher}/best.pth.tar'
             teacher_model = teacher_model.cuda() if params.cuda else teacher_model
 
-        utils.load_checkpoint(teacher_checkpoint, teacher_model)
         teacher_model_load_time = time.time() - teacher_model_load_start
+        utils.load_checkpoint(teacher_checkpoint, teacher_model)
         logging.info("teacher_model_load_time: {}".format(teacher_model_load_time))
 
         # Train the model with KD
