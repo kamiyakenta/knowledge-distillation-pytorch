@@ -12,6 +12,6 @@
   "save_summary_steps": 100,
   "num_workers": 4,
   "train_size": 10000,
-  "collection_size": 0,
-  "day": 1
+  "collection_size": 1025,
+  "day": 4
 }
