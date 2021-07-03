@@ -12,5 +12,5 @@
   "save_summary_steps": 100,
   "num_workers": 4,
   "train_size": 10000,
-  "collection_sizes": [2032]
+  "collection_sizes": [2032, 1965]
 }

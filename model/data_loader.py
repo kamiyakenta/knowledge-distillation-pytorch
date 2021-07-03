@@ -31,17 +31,20 @@ def fetch_dataloader(types, params):
         trainset = torchvision.datasets.CIFAR10(root='./data-cifar10', train=True,
             download=True, transform=train_transformer) #50000
 
-        if ('train_size' in params.dict) and ('collection_size' in params.dict) and ('day' in params.dict):
-            if "_distill" in params.model_version:
-                base_dataset, new_trainset = __edge_data_split(trainset, params)
-                print(f"base_dataset: {len(base_dataset)}")
-                print(f"day_dataset: {len(new_trainset)}")
+        if 'train_size' in params.dict:
+            if ('collection_size' in params.dict and 'day' in params.dict) or 'collection_sizes' in params.dict:
+                if "_distill" in params.model_version:
+                    base_dataset, new_trainset = __edge_data_split(trainset, params)
+                    print("Execute edge-ai")
+                    print(f"-----base_dataset: {len(base_dataset)}-----")
+                    print(f"-----day_dataset: {len(new_trainset)}-----")
+                else:
+                    new_trainset = __cloud_data_split(trainset, params)
+                    print(f"-----train_dataset: {len(new_trainset)}-----")
             else:
-                new_trainset = __cloud_data_split(trainset, params)
-                print(f"train_dataset: {len(new_trainset)}")
-        elif 'train_size' in params.dict:
-            new_trainset, _ = __data_split(trainset, params.train_size)
-            print(f"train_dataset: {len(new_trainset)}")
+                new_trainset, _ = __data_split(trainset, params.train_size)
+                print("Execute edge-ai-base")
+                print(f"-----train_dataset: {len(new_trainset)}-----")
         else:
             new_trainset = trainset
 
@@ -119,22 +122,23 @@ def __data_split(dataset, main_size):
 def __cloud_data_split(dataset, params):
     base_dataset, remain_dataset = __data_split(dataset, params.train_size)
     collections = [base_dataset]
-    for i in range(1, params.day):
-        if i == 1 and 'first_collection_size' in params.dict:
-            day_collection, remain_dataset = __data_split(remain_dataset, params.first_collection_size)
-            continue
-        day_collection, remain_dataset = __data_split(remain_dataset, params.collection_size)
-        collections.append(day_collection)
+    if 'collection_sizes' in params.dict:
+        print("Execute cloud-ai-edge")
+        for collection_size in params.collection_sizes:
+            day_collection, remain_dataset = __data_split(remain_dataset, collection_size)
+            collections.append(day_collection)
+    else:
+        print("Execute cloud-ai")
+        for i in range(1, params.day):
+            day_collection, remain_dataset = __data_split(remain_dataset, params.collection_size)
+            collections.append(day_collection)
     return ConcatDataset(collections)
 
 def __edge_data_split(dataset, params):
     base_dataset, remain_dataset = __data_split(dataset, params.train_size)
     collections = []
-    for i in range(1, params.day+1):
-        if i == 1 and 'first_collection_size' in params.dict:
-            day_collection, remain_dataset = __data_split(remain_dataset, params.first_collection_size)
+    if 'collection_sizes' in params.dict:
+        for collection_size in params.collection_sizes:
+            day_collection, remain_dataset = __data_split(remain_dataset, collection_size)
             collections.append(day_collection)
-            continue
-        day_collection, remain_dataset = __data_split(remain_dataset, params.collection_size)
-        collections.append(day_collection)
     return base_dataset, ConcatDataset(collections)
