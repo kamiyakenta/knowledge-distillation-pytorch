@@ -2,7 +2,7 @@
     "model_version": "edge_ai_base_10000_cnn_distill",
     "subset_percent": 1.0,
     "augmentation": "yes",
-    "teacher": "cloud_ai_10000",
+    "teacher": "cloud_ai_10000-edge",
     "alpha": 0.9,
     "temperature": 20,
     "learning_rate": 1e-5,
@@ -13,6 +13,5 @@
     "save_summary_steps": 100,
     "num_workers": 2,
     "train_size": 10000,
-    "collection_size": 2032,
-    "day": 1
+    "collection_sizes": [2032]
 }
