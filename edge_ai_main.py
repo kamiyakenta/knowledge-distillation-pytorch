@@ -1,7 +1,7 @@
 """
 Main entrance for train/eval with/without KD on CIFAR-10
 e.g.
-python3 edge_ai_main.py --cpu --model_dir experiments/edge_ai_*
+python edge_ai_main.py --cpu --model_dir experiments/edge_ai_*
 """
 
 import argparse
@@ -63,8 +63,8 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
         for i, (train_batch, labels_batch) in enumerate(dataloader):
             # move to GPU if available
             if params.cuda:
-                train_batch, labels_batch = train_batch.cuda(async=True), \
-                                            labels_batch.cuda(async=True)
+                train_batch, labels_batch = train_batch.cuda(_async=True), \
+                                            labels_batch.cuda(_async=True)
             # convert to torch Variables
             train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
 
@@ -172,8 +172,8 @@ def fetch_teacher_outputs(teacher_model, dataloader, params):
     teacher_outputs = []
     for i, (data_batch, labels_batch) in enumerate(dataloader):
         if params.cuda:
-            data_batch, labels_batch = data_batch.cuda(async=True), \
-                                        labels_batch.cuda(async=True)
+            data_batch, labels_batch = data_batch.cuda(_async=True), \
+                                        labels_batch.cuda(_async=True)
         data_batch, labels_batch = Variable(data_batch), Variable(labels_batch)
 
         output_teacher_batch = teacher_model(data_batch).data.cpu().numpy()
@@ -208,8 +208,8 @@ def train_kd(model, teacher_outputs, optimizer, loss_fn_kd, dataloader, metrics,
         for i, (train_batch, labels_batch) in enumerate(dataloader):
             # move to GPU if available
             if params.cuda:
-                train_batch, labels_batch = train_batch.cuda(async=True), \
-                                            labels_batch.cuda(async=True)
+                train_batch, labels_batch = train_batch.cuda(_async=True), \
+                                            labels_batch.cuda(_async=True)
             # convert to torch Variables
             train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
 
@@ -219,7 +219,7 @@ def train_kd(model, teacher_outputs, optimizer, loss_fn_kd, dataloader, metrics,
             # get one batch output from teacher_outputs list
             output_teacher_batch = torch.from_numpy(teacher_outputs[i])
             if params.cuda:
-                output_teacher_batch = output_teacher_batch.cuda(async=True)
+                output_teacher_batch = output_teacher_batch.cuda(_async=True)
             output_teacher_batch = Variable(output_teacher_batch, requires_grad=False)
 
             loss = loss_fn_kd(output_batch, labels_batch, output_teacher_batch, params)
@@ -255,6 +255,7 @@ def train_kd(model, teacher_outputs, optimizer, loss_fn_kd, dataloader, metrics,
     metrics_mean = {metric:np.mean([x[metric] for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Train metrics: " + metrics_string)
+    return metrics_mean['accuracy']
 
 
 def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader, optimizer,
