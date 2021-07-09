@@ -29,6 +29,7 @@ import model.resnext as resnext
 import model.wrn as wrn
 import utils
 from evaluate import evaluate, evaluate_kd
+from model.mobilenetv3 import mobilenetv3_small
 
 parser = argparse.ArgumentParser()
 # parser.add_argument('--data_dir', default='data/64x64_SIGNS', help="Directory for the dataset")
@@ -396,9 +397,9 @@ if __name__ == '__main__':
     if "distill" in params.model_version:
         # train a 5-layer CNN or a 18-layer ResNet with knowledge distillation
         if params.model_version == "cnn_distill":
+            # model = mobilenetv3_small().cuda() if params.cuda else mobilenetv3_small()
             model = net.Net(params).cuda() if params.cuda else net.Net(params)
             optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
-            # fetch loss function and metrics definition in model files
             loss_fn_kd = net.loss_fn_kd
             metrics = net.metrics
         
